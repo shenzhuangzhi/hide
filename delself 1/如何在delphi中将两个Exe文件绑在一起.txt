@@ -1,0 +1,998 @@
+一)初级应用篇: 
+ 资源文件一般为扩展名为res的文件.在VC中资源文件用得非常普遍,但Delphi在其联机帮助中对资源文件没作什么介绍,其实利用其自带的资源编译工具BRCC32.EXE(一般位于\Delphi\BIN目录下）,我们完全可以做出跟VC一样效果的文件来。 
+ 资源文件最大的好处是能将一些在必要时才调用的文件跟可执行文件一起编译,生成一个文件.这样做最大的好处就是使外部文件免遭破坏.例如在一条程序中你要临时调用一幅图片,一般作法是把图片放在某一路径下（通常是主程序所在路径）,但如果用户路径误删你的图片文件,则可能使程序找不到相应文件而出错崩溃.另外,如果你想自己的程序界面美观,想用一些自定义光标,也要用到资源文件。 
+ 资源文件的使用步骤为： 
+1.编写rc脚本文本 
+用记事本或其它文本编辑器编写一个扩展名为rc的文件。例如： 
+
+mycur cursor move.cur //加入光标 
+mypic Bitmap Water.BMP //加入位图 
+mywav WAVE happy.wav //加入声音 
+myAVI AVI EPOEN.AVI //加入视频 
+myIco ICON CJT.ICO //加入图标 
+
+ 格式分别为在资源文件中的名称->类型->实际文件名称，例如上面第一行定义一个名为mycur的光标，实际名称为加入光标move.cur. 
+2.将rc文件编译成res资源文件 
+ 将脚本文件和实际文件拷到Brcc32.EXE所在目录，执行DOS命令。格式为：Brcc32 脚本文件(回车)，例如有一名为myfirst.rc的脚本文件，则执行 Brcc32 myfirst.rc(回车)即可。如果你是懒人，也可新建一批处理文件，内容只有一行：Brcc32 mufist.rc.(因为Delphi安装后一般会在自动批处理文件中指明搜索路径的。)如果编译成功，则会生成一个结尾为res的文件，这个文件就是我们需要的资源文件。 
+3.在Delphi单元中加入资源文件 
+ 将生成的res资源文件拷贝到你所编程序的路径下，在单元文件{$R *DFM}后加上一句{$R mufirst.res}，则将res文件加入去，编译后资 源文件即已包含在可执行文件中了。若你有多个资源文件，也按上法依次加入。 
+4.在Delphi程序中调用资源文件 
+ 资源文件在Delphi中的关键字为hinstance.下面给出具体用法. 
+<1>光标的调用 
+ 首先在程序中定义一个值大于0的常量，因为Delphi本身用0-负16来索引默认的光标，所以我们制定的光标应从表面上1开始索引。然后在窗口的Oncreat事件中添加以下代码： 
+screen.cursor[35]:=Loadcursor (hinstance,'mycur'); 
+ 其中35为大于1的常量，mycur为光标在资源文件中的名字。如果希望在其他控件上使用定制光标，例如Panel控件，只需在程序的适当处加入以下代码： 
+Panel1.cursor:=35; 
+
+
+ 编译这个程序，并把EXE文件改名为head.exe。新建一个文本文件head.rc,内容为: head exefile head.exe,然后把它们拷贝到Delphi的BIN目录下，执行Dos命令Brcc32.exe head.rc,将产生一个head.res的文件，这个文件就是我们要的资源文件，先留着。
+  我们的头文件已经建立了，下面我们来建立添加程序。
+  新建一个工程，放上以下控件：一个Edit,一个Opendialog,两个Button1的Caption属性分别设置为"选择文件"和"加密"。在源程序中添加一句:{$R head.res}并把head.res文件拷贝到程序当前目录下。这样一来就把刚才的head.exe跟程序一起编译了。
+  在Button1的Cilck事件里面写下代码：
+if OpenDialog1.Execute then Edit1.Text:=OpenDialog1.FileName;
+  在Button2的Cilck事件里面写下代码：
+
+其中ExtractRes为自定义函数，它的作用是把head.exe从资源文件中取出来。
+Function ExtractRes(ResType, ResName, ResNewName : String):boolean;
+var
+Res : TResourceStream;
+begin
+try
+Res := TResourceStream.Create(Hinstance, Resname, Pchar(ResType));
+try
+Res.SavetoFile(ResNewName);
+Result:=true;
+finally
+Res.Free;
+end;
+except
+Result:=false;
+end;
+end;
+
+
+
+
+
+
+话题595398的标题是： 如何在delphi中将两个Exe文件绑在一起? (100分)
+分类：IDE/使用技巧 iapollo (2001-08-05 10:41:00)  
+如何在delphi中将两个Exe文件绑在一起?
+
+ 
+DragonPC_??? (2001-08-16 10:20:00)  
+用 RES 文件封装，有文章探讨该问题的，
+你不是写病毒吧 
+ 
+creazyboy (2001-08-16 15:07:00)  
+一个为什么要把两个可执行程序帮在一起
+我觉得只有一个exe就够了 
+ 
+CJF (2001-08-16 15:23:00)  
+或者自己加在另外一个文件的后尾，然后自己控制释放，也可以解决，而且通过文件头看
+不出来。 
+ 
+WngZhng (2001-08-16 15:38:00)  
+以后作病毒用得到 
+ 
+飞来石 (2001-08-16 20:50:00)  
+得到两个文件的大小，再建立一个新文件，将内容写进去。 
+ 
+scorpions (2001-08-17 21:10:00)  
+关注 
+ 
+sunyb (2001-08-17 21:31:00)  
+关注 
+ 
+kingkong (2001-08-17 22:33:00)  
+关注
+
+ 
+yuppc (2001-08-21 7:32:00)  
+使用Tstream看看把 
+ 
+ljh_ty (2001-08-21 9:02:00)  
+有源码呀，我记不清网址了，应该能找到的，好象是三驼 
+ 
+dragonzzgz (2001-08-21 10:43:00)  
+a exe file with virus, do you want to get one? 
+ 
+zbsfg (2001-08-21 11:12:00)  
+关注！ 
+ 
+hujunyi (2001-08-21 15:00:00)  
+关注…… 
+ 
+yuppc (2001-09-04 15:39:00)  
+转贴一个例子吧(只有如何加入,应用自己想吧)
+=========================================================
+信息标题：我知道了如何动态在EXE中加入任何资源(.EXE,.BMP,.SWF,.DOC..)大家分享一下吧!(1460字) 
+信息作者：crisee 
+发表时间：2001-8-18 11:06:00
+阅读次数：363
+信息内容：
+
+前些日子，我发表了类似的帖子，是求援的。
+  然后，参考了些源码。经过“处心积虑”的琢磨，终于弄懂了。
+  本人是编程初学者，脑子也笨，高手见了不要见笑!
+  我发现哦，在EXE资源区内写入其它资源，虽然EXE还可运行，但图标会变成Windows默认的样儿，也就是说EXE中的ICON资源遭破坏了。然后，我尝试在EXE尾部写入资源，太棒了!虽然文件长度增加，但丝毫没有影响EXE的运行。我们假定要把 sir32.exe 加入 程序(project1.exe)中。
+首先，创建新的Project，定义 private 变量 fStream:TFileStream，然后写个过程
+Procedure TForm1.EXEStrore;
+var FS: TFileStream;
+Begin
+  //首先将程序自身复制为~tmp.exe
+  CopyFile(Application.ExeName, '~tmp.exe', false);
+  //为打~tmp.exe创建 fStream，模式为 只读。
+  fStream.Create('~tmp.exe',fmOpenRead);
+  //为打开sir32.exe创建 FS，模式为 只读。
+  FS.Create('Sir32.exe',fmOpenRead);
+try
+  //将fStream定位至 ~tmp.exe文件尾部。
+  fStream.position := fStream.Seek(0, SoFromEnd);
+  //将 FS (sir32.exe) 定位至文件首部，准备读入内存。
+  FS.Postion := 0;
+  //将 FS(Sir32.exe) 写入 fStream(编译后的程序project1.exe)
+  //OK..
+  fStream.CopyFrom(FS, FS.Size);
+finally
+  //释放资源，要不会出错的。
+  fStream.free;
+  FS.free;
+end;
+end;
+以上简短的代码，就可以把任何类型的文件写入~tmp.exe中。当然，~tmp.exe只是中转站。然后在写一段用.bat文件删除程序本身，并把~tmp.exe改为程序名的代码。
+如 定义 var pfile: TEXTFILE ; 
+begin
+  AssignFile(pfile,'~tmp.bat');
+  reWrite(pfile);
+  WriteLn(pfile, Pchar('Del '+Application.ExeName));
+  WriteLn(pfile, Pchar('ren ~tmp.exe '+Application.ExeName));
+  WriteLn(pfile, 'Del %0');
+  WriteLn(pfile, 'Exit');
+  CloseFile(pfile);
+  WinExec('~tmp.bat',SW_Hide);
+  Halt; 
+end;
+最后，你会发现project1.exe文件长度增加了，具体增加的长度刚是sir32.exe的大小(一个字节也不差)。
+但是，如何再把写入的文件再读出呢？自己想想，或是我下回就说 ^:^
+                                            Crisee@sina.com 
+ 
+goodpb1 (2001-09-04 15:57:00)  
+listen 
+ 
+hujunyi (2001-09-05 20:10:00)  
+yuppc, 这段代码是可以实现的。
+  fStream := TFileStream.Create(PChar(GetCurrentDir + '\~tmp.exe'), fmOpenReadWrite);
+  //为打开sir32.exe创建 FS，模式为 只读。
+  FS := TFileStream.Create(PChar(GetCurrentDir + '\yourfile.exe'), fmOpenRead);
+这两句要改一下。 
+ 
+尘莽 (2001-09-05 20:55:00)  
+使用资源文件是非常容易实现的 
+ 
+marco_shl (2001-10-31 13:34:00)  
+这个问题我也有不过我在网上看到，也找到了人家编的程序，要用到PE文件头的知<br>
+识，还要用到汇编。具体汇源程序没见到。具体程序在http://mincer.top263.net里<br>
+
+ 
+changzheng (2001-11-07 17:02:00)  
+没那么麻烦吧
+http://newhua.infosail.com/EXEBIND.HTM
+来下载这个软件吧,就可以了 
+ 
+jqw (2001-11-07 17:25:00)  
+res 
+ 
+goddy (2001-11-07 17:46:00)  
+可以啊，把先编译好A.exe当作资源 放入后编译B.exe 中，执行B.exe 时加参数
+时Save As A.exe To c:\ 然后加载A.exe  退出B.exe 
+如执行B.exe 时不加参数 时就执行自己
+
+ 
+xuziling20 (2001-11-07 18:37:00)  
+http://www.delphibbs.com/delphibbs/dispq.asp?lid=655607
+ 
+基本上可以将两个EXE捆在一起,
+然后将其分离后单独运行.再删除分离出去的程序.后面比较简单了,
+
+ 
+DBCB (2001-11-10 13:48:00)  
+写木马程序啊？ 
+使用资源文件来实现，网上这样的文章比较多的…… 
+ 
+jingtao (2001-11-22 15:51:00)  
+ 建议分辨率:800X600 
+                         谈Delphi编程中“流”的利用
+
+                                                   陈经韬
+
+
+   什么是流？流,简单来说就是建立在面向对象基础上的一种抽象的处理数据的工具。在流中，定义了一些处理数据的基本操作，如读取数据，写入数据等，程序员是对流进行所有操作的，而不用关心流的另一头数据的真正流向。流不但可以处理文件，还可以处理动态内存、网络数据等多种数据形式。如果你对流的操作非常熟练，在程序中利用流的方便性，写起程序会大大提高效率的。
+  下面，笔者通过四个实例:EXE文件加密器、电子贺卡、自制OICQ和网络屏幕传输来说明Delphi编程中“流”的利用。这些例子中的一些技巧曾经是很多软件的秘密而不公开的，现在大家可以无偿的直接引用其中的代码了。
+  “万丈高楼平地起”，在分析实例之前，我们先来了解一下流的基本概念和函数，只有在理解了这些基本的东西后我们才能进行下一步。请务必认真领会这些基本方法。当然，如果你对它们已经很熟悉了，则可以跳过这一步。
+
+一、Delphi中流的基本概念及函数声明
+在Delphi中，所有流对象的基类为TStream类，其中定义了所有流的共同属性和方法。
+TStream类中定义的属性介绍如下：
+1、Size:此属性以字节返回流中数据大小。
+2、Position:此属性控制流中存取指针的位置。
+Tstream中定义的虚方法有四个：
+1、Read:此方法实现将数据从流中读出。函数原形为：
+Function Read(var Buffer;Count:Longint):Longint;virtual;abstract;
+参数Buffer为数据读出时放置的缓冲区，Count为需要读出的数据的字节数，该方法返回值为实际读出的字节数，它可以小于或等于Count中指定的值。
+2、Write:此方法实现将数据写入流中。函数原形为：
+Function Write(var Buffer;Count:Longint):Longint;virtual;abstract;
+参数Buffer为将要写入流中的数据的缓冲区，Count为数据的长度字节数，该方法返回值为实际写入流中的字节数。
+3、Seek:此方法实现流中读取指针的移动。函数原形为：
+Function Seek(Offset:Longint;Origint:Word):Longint;virtual;abstract;
+参数Offset为偏移字节数,参数Origint指出Offset的实际意义，其可能的取值如下：
+soFromBeginning:Offset为移动后指针距离数据开始的位置。此时Offset必须大于或者等于零。
+soFromCurrent:Offset为移动后指针与当前指针的相对位置。
+soFromEnd:Offset为移动后指针距离数据结束的位置。此时Offset必须小于或者等于零。
+该方法返回值为移动后指针的位置。
+4、Setsize:此方法实现改变数据的大小。函数原形为：
+Function Setsize(NewSize:Longint);virtual;
+另外，TStream类中还定义了几个静态方法：
+1、ReadBuffer:此方法的作用是从流中当前位置读取数据。函数原形为：
+Procedure ReadBuffer(var Buffer;Count:Longint);
+参数的定义跟上面的Read相同。注意：当读取的数据字节数与需要读取的字节数不相同时，将产生EReadError异常。
+2、WriteBuffer:此方法的作用是在当前位置向流写入数据。函数原形为：
+Procedure WriteBuffer(var Buffer;Count:Longint);
+参数的定义跟上面的Write相同。注意：当写入的数据字节数与需要写入的字节数不相同时，将产生EWriteError异常。
+3、CopyFrom:此方法的作用是从其它流中拷贝数据流。函数原形为：
+Function CopyFrom(Source:TStream;Count:Longint):Longint;
+参数Source为提供数据的流，Count为拷贝的数据字节数。当Count大于0时，CopyFrom从Source参数的当前位置拷贝Count个字节的数据；当Count等于0时，CopyFrom设置Source参数的Position属性为0,然后拷贝Source的所有数据；
+TStream还有其它派生类，其中最常用的是TFileStream类。使用TFileStream类来存取文件，首先要建立一个实例。声明如下：
+constructor Create(const Filename:string;Mode:Word);
+Filename为文件名（包括路径）,参数Mode为打开文件的方式，它包括文件的打开模式和共享模式，其可能的取值和意义如下：
+
+打开模式：
+fmCreate :用指定的文件名建立文件，如果文件已经存在则打开它。
+fmOpenRead :以只读方式打开指定文件
+fmOpenWrite :以只写方式打开指定文件
+fmOpenReadWrite:以写写方式打开指定文件
+共享模式：
+fmShareCompat :共享模式与FCBs兼容
+fmShareExclusive:不允许别的程序以任何方式打开该文件
+fmShareDenyWrite:不允许别的程序以写方式打开该文件
+fmShareDenyRead :不允许别的程序以读方式打开该文件
+fmShareDenyNone :别的程序可以以任何方式打开该文件
+
+TStream还有一个派生类TMemoryStream，实际应用中用的次数也非常频繁。它叫内存流，就是说在内存中建立一个流对象。它的基本方法和函数跟上面是一样的。
+好了，有了上面的基础后，我们就可以开始我们的编程之行了。
+-----------------------------------------------------------------------
+二、实际应用之一：利用流制作EXE文件加密器、捆绑、自解压文件及安装程序
+
+  我们先来说一下如何制作一个EXE文件加密器吧。 
+  EXE文件加密器的原理：建立两个文件，一个用来添加资源到另外一个EXE文件里面，称为添加程序。另外一个被添加的EXE文件称为头文件。该程序的功能是把添加到自己里面的文件读出来。Windows下的EXE文件结构比较复杂，有的程序还有校验和，当发现自己被改变后会认为自己被病毒感染而拒绝执行。所以我们把文件添加到自己的程序里面，这样就不会改变原来的文件结构了。我们先写一个添加函数，该函数的功能是把一个文件当作一个流添加到另外一个文件的尾部。函数如下：
+
+Function Cjt_AddtoFile(SourceFile,TargetFile:string):Boolean;
+var
+Target,Source:TFileStream;
+MyFileSize:integer;
+begin
+try
+Source:=TFileStream.Create(SourceFile,fmOpenRead or fmShareExclusive);
+Target:=TFileStream.Create(TargetFile,fmOpenWrite or fmShareExclusive);
+try
+Target.Seek(0,soFromEnd);//往尾部添加资源
+Target.CopyFrom(Source,0);
+MyFileSize:=Source.Size+Sizeof(MyFileSize);//计算资源大小，并写入辅程尾部
+Target.WriteBuffer(MyFileSize,sizeof(MyFileSize));
+finally
+Target.Free;
+Source.Free;
+end;
+except
+Result:=False;
+Exit;
+end;
+Result:=True;
+end;
+有了上面的基础，我们应该很容易看得懂这个函数。其中参数SourceFile是要添加的文件,参数TargetFile是被添加到的目标文件。比如说把a.exe添加到b.exe里面可以：Cjt_AddtoFile('a.exe',b.exe');如果添加成功就返回True否则返回假。
+根据上面的函数我们可以写出相反的读出函数：
+Function Cjt_LoadFromFile(SourceFile,TargetFile :string):Boolean;
+var
+Source:TFileStream;
+Target:TMemoryStream;
+MyFileSize:integer;
+begin
+try
+Target:=TMemoryStream.Create;
+Source:=TFileStream.Create(SourceFile,fmOpenRead or fmShareDenyNone);
+try
+Source.Seek(-sizeof(MyFileSize),soFromEnd);
+Source.ReadBuffer(MyFileSize,sizeof(MyFileSize));//读出资源大小
+Source.Seek(-MyFileSize,soFromEnd);//定位到资源位置
+Target.CopyFrom(Source,MyFileSize-sizeof(MyFileSize));//取出资源
+Target.SaveToFile(TargetFile);//存放到文件
+finally
+Target.Free;
+Source.Free;
+end;
+except
+Result:=false;
+Exit;
+end;
+Result:=true;
+end;
+  其中参数SourceFile是已经添加了文件的文件名称,参数TargetFile是取出文件后保存的目标文件名。比如说Cjt_LoadFromFile('b.exe','a.txt');在b.exe中取出文件保存为a.txt。如果取出成功就返回True否则返回假。
+打开Delphi，新建一个工程，在窗口上放上一个Edit控件Edit1和两个Button:Button1和Button2。Button的Caption属性分别设置为“确定”和“取消”。在Button1的Click事件中写代码:
+var S:string;
+begin
+S:=ChangeFileExt(Application.ExeName,'.Cjt');
+if Edit1.Text='790617' then 
+begin
+Cjt_LoadFromFile(Application.ExeName,S);
+{取出文件保存在当前路径下并命名"原文件.Cjt"}
+Winexec(pchar(S),SW_Show);{运行"原文件.Cjt"}
+Application.Terminate;{退出程序}
+end
+else 
+Application.MessageBox('密码不对,请重新输入！','密码错误',MB_ICONERROR+MB_OK);
+  编译这个程序，并把EXE文件改名为head.exe。新建一个文本文件head.rc,内容为: head exefile head.exe,然后把它们拷贝到Delphi的BIN目录下，执行Dos命令Brcc32.exe head.rc,将产生一个head.res的文件，这个文件就是我们要的资源文件，先留着。
+  我们的头文件已经建立了，下面我们来建立添加程序。
+  新建一个工程，放上以下控件：一个Edit,一个Opendialog,两个Button1的Caption属性分别设置为"选择文件"和"加密"。在源程序中添加一句:{$R head.res}并把head.res文件拷贝到程序当前目录下。这样一来就把刚才的head.exe跟程序一起编译了。
+  在Button1的Cilck事件里面写下代码：
+if OpenDialog1.Execute then Edit1.Text:=OpenDialog1.FileName;
+  在Button2的Cilck事件里面写下代码：
+var S:String;
+begin
+S:=ExtractFilePath(Edit1.Text);
+if ExtractRes('exefile','head',S+'head.exe') then
+if Cjt_AddtoFile(Edit1.Text,S+'head.exe') then
+if DeleteFile(Edit1.Text) then
+if RenameFile(S+'head.exe',Edit1.Text) then
+Application.MessageBox('文件加密成功!','信息',MB_ICONINFORMATION+MB_OK)
+else
+begin
+if FileExists(S+'head.exe') then DeleteFile(S+'head.exe');
+Application.MessageBox('文件加密失败!','信息',MB_ICONINFORMATION+MB_OK)
+end;
+end;
+其中ExtractRes为自定义函数，它的作用是把head.exe从资源文件中取出来。
+Function ExtractRes(ResType, ResName, ResNewName : String):boolean;
+var
+Res : TResourceStream;
+begin
+try
+Res := TResourceStream.Create(Hinstance, Resname, Pchar(ResType));
+try
+Res.SavetoFile(ResNewName);
+Result:=true;
+finally
+Res.Free;
+end;
+except
+Result:=false;
+end;
+end;
+   注意：我们上面的函数只不过是简单的把一个文件添加到另一个文件的尾部。实际应用中可以改成可以添加多个文件，只要根据实际大小和个数定义好偏移地址就可以了。比如说文件捆绑机就是把两个或者多个程序添加到一个头文件里面。那些自解压程序和安装程序的原理也是一样的，不过多了压缩而已。比如说我们可以引用一个LAH单元，把流压缩后再添加，这样文件就会变的很小。读出来时先解压就可以了。另外，文中EXE加密器的例子还有很多不完善的地方，比如说密码固定为"790617"，取出EXE运行后应该等它运行完毕后删除等等，读者可以自行修改。
+
+---------------------------------------------------------------------
+三、实际应用之二：利用流制作可执行电子贺卡
+
+  我们经常看到一些电子贺卡之类的制作软件，可以让你自己选择图片，然后它会生成一个EXE可执行文件给你。打开贺卡时就会一边放音乐一边显示出图片来。现在学了流操作之后，我们也可以做一个了。 
+  添加图片过程我们可以直接用前面的Cjt_AddtoFile，而现在要做的是如何把图像读出并显示。我们用前面的Cjt_LoadFromFile先把图片读出来保存为文件再调入也是可以的，但是还有更简单的方法，就是直接把文件流读出来显示，有了流这个利器，一切都变的简单了。
+  现在的图片比较流行的是BMP格式和JPG格式。我们现在就针对这两种图片写出读取并显示函数。
+
+Function Cjt_BmpLoad(ImgBmp:TImage;SourceFile:String):Boolean;
+var
+Source:TFileStream;
+MyFileSize:integer;
+begin
+Source:=TFileStream.Create(SourceFile,fmOpenRead or fmShareDenyNone);
+try
+try
+Source.Seek(-sizeof(MyFileSize),soFromEnd);
+Source.ReadBuffer(MyFileSize,sizeof(MyFileSize));//读出资源
+Source.Seek(-MyFileSize,soFromEnd);//定位到资源开始位置
+ImgBmp.Picture.Bitmap.LoadFromStream(Source);
+finally
+Source.Free;
+end;
+except
+Result:=False;
+Exit;
+end;
+Result:=True;
+end;
+  上面是读出BMP图片的，下面的是读出JPG图片的函数，因为要用到JPG单元，所以要在程序中添加一句:uses jpeg。
+
+Function Cjt_JpgLoad(JpgImg:Timage;SourceFile:String):Boolean;
+var
+Source:TFileStream;
+MyFileSize:integer;
+Myjpg: TJpegImage;
+begin
+try
+Myjpg:= TJpegImage.Create;
+Source:=TFileStream.Create(SourceFile,fmOpenRead or fmShareDenyNone);
+try
+Source.Seek(-sizeof(MyFileSize),soFromEnd);
+Source.ReadBuffer(MyFileSize,sizeof(MyFileSize));
+Source.Seek(-MyFileSize,soFromEnd);
+Myjpg.LoadFromStream(Source);
+JpgImg.Picture.Bitmap.Assign(Myjpg);
+finally
+Source.Free;
+Myjpg.free;
+end;
+except
+Result:=false;
+Exit;
+end;
+Result:=true;
+end;
+  有了这两个函数，我们就可以制作读出程序了。下面我们以BMP图片为例：
+  运行Delphi，新建一个工程，放上一个显示图像控件Image1。在窗口的Create事件中写上一句就可以了：
+Cjt_BmpLoad(Image1,Application.ExeName);
+  这个就是头文件了，然后我们用前面的方法生成一个head.res资源文件。
+下面就可以开始制作我们的添加程序了。全部代码如下：
+unit Unit1;
+
+interface
+
+uses
+Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+ExtCtrls, StdCtrls, ExtDlgs;
+
+type
+TForm1 = class(TForm)
+Edit1: TEdit;
+Button1: TButton;
+Button2: TButton;
+OpenPictureDialog1: TOpenPictureDialog;
+procedure FormCreate(Sender: TObject);
+procedure Button1Click(Sender: TObject);
+procedure Button2Click(Sender: TObject);
+private
+Function ExtractRes(ResType, ResName, ResNewName : String):boolean;
+Function Cjt_AddtoFile(SourceFile,TargetFile:string):Boolean;
+{ Private declarations }
+public
+{ Public declarations }
+end;
+
+var
+Form1: TForm1;
+
+implementation
+
+{$R *.DFM}
+Function TForm1.ExtractRes(ResType, ResName, ResNewName : String):boolean;
+var
+Res : TResourceStream;
+begin
+try
+Res := TResourceStream.Create(Hinstance, Resname, Pchar(ResType));
+try
+Res.SavetoFile(ResNewName);
+Result:=true;
+finally
+Res.Free;
+end;
+except
+Result:=false;
+end;
+end;
+Function TForm1.Cjt_AddtoFile(SourceFile,TargetFile:string):Boolean;
+var
+Target,Source:TFileStream;
+MyFileSize:integer;
+begin
+try
+Source:=TFileStream.Create(SourceFile,fmOpenRead or fmShareExclusive);
+Target:=TFileStream.Create(TargetFile,fmOpenWrite or fmShareExclusive);
+try
+Target.Seek(0,soFromEnd);//往尾部添加资源
+Target.CopyFrom(Source,0);
+MyFileSize:=Source.Size+Sizeof(MyFileSize);//计算资源大小，并写入辅程尾部
+Target.WriteBuffer(MyFileSize,sizeof(MyFileSize));
+finally
+Target.Free;
+Source.Free;
+end;
+except
+Result:=False;
+Exit;
+end;
+Result:=True;
+end;
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+Caption:='Bmp2Exe演示程序.作者:陈经韬';
+Edit1.Text:='';
+OpenPictureDialog1.DefaultExt := GraphicExtension(TBitmap);
+OpenPictureDialog1.Filter := GraphicFilter(TBitmap);
+
+Button1.Caption:='选择BMP图片';
+Button2.Caption:='生成EXE';
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+if OpenPictureDialog1.Execute then
+Edit1.Text:=OpenPictureDialog1.FileName;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+var
+HeadTemp:String;
+begin
+if Not FileExists(Edit1.Text) then
+begin
+Application.MessageBox('BMP图片文件不存在，请重新选择!','信息',MB_ICONINFORMATION+MB_OK)
+Exit;
+end;
+HeadTemp:=ChangeFileExt(Edit1.Text,'.exe');
+if ExtractRes('exefile','head',HeadTemp) then
+if Cjt_AddtoFile(Edit1.Text,HeadTemp) then
+Application.MessageBox('EXE文件生成成功!','信息',MB_ICONINFORMATION+MB_OK)
+else
+begin
+if FileExists(HeadTemp) then DeleteFile(HeadTemp);
+Application.MessageBox('EXE文件生成失败!','信息',MB_ICONINFORMATION+MB_OK)
+end;
+end;
+end.
+  怎么样？很神奇吧:)把程序界面弄的漂亮点，再添加一些功能，你会发现比起那些要注册的软件来也不会逊多少吧。
+-----------------------------------------------------------------------
+实际应用之三：利用流制作自己的OICQ
+
+  OICQ是深圳腾讯公司的一个网络实时通讯软件，在国内拥有大量的用户群。但OICQ必须连接上互联网登陆到腾讯的服务器才能使用。所以我们可以自己写一个在局部网里面使用。
+  OICQ使用的是UDP协议，这是一种无连接协议，即通信双方不用建立连接就可以发送信息，所以效率比较高。Delphi本身自带的FastNEt公司的NMUDP控件就是一个UDP协议的用户数据报控件。不过要注意的是如果你使用了这个控件必须退出程序才能关闭计算机，因为TNMXXX控件有BUG。所有nm控件的基础 PowerSocket用到的ThreadTimer，用到一个隐藏的窗口（类为TmrWindowClass）处理有硬伤。
+出问题的地方：
+Psock::TThreadTimer::WndProc(var msg:TMessage)
+if msg.message=WM_TIMER then
+他自己处理
+msg.result:=0
+else
+msg.result:=DefWindowProc(0,....)
+end 
+  问题就出在调用 DefWindowProc时，传输的HWND参数居然是常数0，这样实际上DefWindowProc是不能工作的，对任何输入的消息的调用均返回0，包括WM_QUERYENDSESSION，所以不能退出windows。由于DefWindowProc的不正常调用，实际上除WM_TIMER，其他消息由DefWindowProc处理都是无效的。
+解决的办法是在 PSock.pas
+在 TThreadTimer.Wndproc 内
+Result := DefWindowProc( 0, Msg, WPARAM, LPARAM );
+改为：
+Result := DefWindowProc( FWindowHandle, Msg, WPARAM, LPARAM );
+  早期低版本的OICQ也有这个问题，如果不关闭OICQ的话，关闭计算机时屏幕闪了一下又返回了。
+  好了，废话少说，让我们编写我们的OICQ吧,这个实际上是Delphi自带的例子而已:)
+  新建一个工程，在FASTNET面版拖一个NMUDP控件到窗口，然后依次放上三个EDIT,名字分别为EditIP、EditPort、EditMyTxt，三个按钮BtSend、BtClear、BtSave，一个MEMOMemoReceive，一个SaveDialog和一个状态条StatusBar1。当用户点击BtSend时，建立一个内存流对象，把要发送的文字信息写进内存流，然后NMUDP把流发送出去。当NMUDP有数据接收时，触发它的DataReceived事件，我们在这里再把接收到的流转换为字符信息，然后显示出来。
+  注意：所有的流对象建立后使用完毕后要记得释放(Free)，其实它的释构函数应该为Destroy，但如果建立流失败的话，用Destroy会产生异常，而用Free的话程序会先检查有没有成功建立了流，如果建立了才释放，所以用Free比较安全。
+  在这个程序中我们用到了NMUDP控件，它有几个重要的属性。RemoteHost表示远程电脑的IP或者计算机名，LocalPort是本地端口，主要监听有没有数据传入。而RemotePort是远程端口，发送数据时通过这个端口把数据发送出去。理解这些已经可以看懂我们的程序了。
+
+全部代码如下：
+unit Unit1;
+
+interface
+
+uses
+Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,StdCtrls, ComCtrls,NMUDP;
+
+type
+TForm1 = class(TForm)
+NMUDP1: TNMUDP;
+EditIP: TEdit;
+EditPort: TEdit;
+EditMyTxt: TEdit;
+MemoReceive: TMemo; 
+BtSend: TButton;
+BtClear: TButton;
+BtSave: TButton;
+StatusBar1: TStatusBar; 
+SaveDialog1: TSaveDialog;
+procedure BtSendClick(Sender: TObject);
+procedure NMUDP1DataReceived(Sender: TComponent; NumberBytes: Integer;
+FromIP: String; Port: Integer);
+procedure NMUDP1InvalidHost(var handled: Boolean);
+procedure NMUDP1DataSend(Sender: TObject);
+procedure FormCreate(Sender: TObject);
+procedure BtClearClick(Sender: TObject);
+procedure BtSaveClick(Sender: TObject);
+procedure EditMyTxtKeyPress(Sender: TObject; var Key: Char);
+private
+{ Private declarations }
+public
+{ Public declarations }
+end;
+
+var
+Form1: TForm1;
+
+implementation
+
+{$R *.DFM}
+
+procedure TForm1.BtSendClick(Sender: TObject);
+var
+MyStream: TMemoryStream;
+MySendTxt: String;
+Iport,icode:integer;
+Begin
+Val(EditPort.Text,Iport,icode);
+if icode<>0 then
+begin
+Application.MessageBox('端口必须为数字，请重新输入!','信息',MB_ICONINFORMATION+MB_OK);
+Exit;
+end;
+NMUDP1.RemoteHost := EditIP.Text; {远程主机}
+NMUDP1.LocalPort:=Iport; {本地端口}
+NMUDP1.RemotePort := Iport; {远程端口}
+MySendTxt := EditMyTxt.Text;
+MyStream := TMemoryStream.Create; {建立流}
+try
+MyStream.Write(MySendTxt[1], Length(EditMyTxt.Text));{写数据}
+NMUDP1.SendStream(MyStream); {发送流}
+finally
+MyStream.Free; {释放流}
+end;
+end;
+
+
+procedure TForm1.NMUDP1DataReceived(Sender: TComponent;
+NumberBytes: Integer; FromIP: String; Port: Integer);
+var
+MyStream: TMemoryStream;
+MyReciveTxt: String;
+begin
+MyStream := TMemoryStream.Create; {建立流}
+try
+NMUDP1.ReadStream(MyStream);{接收流}
+SetLength(MyReciveTxt,NumberBytes);{NumberBytes为接收到的字节数}
+MyStream.Read(MyReciveTxt[1],NumberBytes);{读数据}
+MemoReceive.Lines.Add('接收到来自主机'+FromIP+'的信息:'+MyReciveTxt);
+finally
+MyStream.Free; {释放流}
+end;
+end;
+
+procedure TForm1.NMUDP1InvalidHost(var handled: Boolean);
+begin
+Application.MessageBox('对方IP地址不正确，请重新输入!','信息',MB_ICONINFORMATION+MB_OK);
+end;
+
+procedure TForm1.NMUDP1DataSend(Sender: TObject);
+begin
+StatusBar1.SimpleText:='信息成功发出!';
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+EditIP.Text:='127.0.0.1';
+EditPort.Text:='8868';
+BtSend.Caption:='发送';
+BtClear.Caption:='清除聊天记录';
+BtSave.Caption:='保存聊天记录';
+MemoReceive.ScrollBars:=ssBoth;
+MemoReceive.Clear;
+EditMyTxt.Text:='在这里输入信息,然后点击发送.';
+
+StatusBar1.SimplePanel:=true;
+end;
+
+procedure TForm1.BtClearClick(Sender: TObject);
+begin
+MemoReceive.Clear;
+end;
+
+procedure TForm1.BtSaveClick(Sender: TObject);
+begin
+if SaveDialog1.Execute then MemoReceive.Lines.SaveToFile(SaveDialog1.FileName);
+end;
+
+procedure TForm1.EditMyTxtKeyPress(Sender: TObject; var Key: Char);
+begin
+if Key=#13 then BtSend.Click;
+end;
+end.
+  上面的程序跟OICQ相比当然差之甚远，因为OICQ利用的是Socket5通信方式。它上线时先从服务器取回好友信息和在线状态，发送超时还会将信息先保存在服务器，等对方下次上线后再发送然后把服务器的备份删除。你可以根据前面学的概念来完善这个程序，比如说再添加一个NMUDP控件来管理在线状态，发送的信息先转换成ASCII码进行与或运行并加上一个头信息，接收方接收信息后先判断信息头正确与否，如果正确才把信息解密显示出来，这样就提高了安全保密性。
+  另外，UDP协议还有一个很大的好处就是可以广播，就是说处于一个网段的都可以接收到信息而不必指定具体的IP地址。网段一般分A、B、C三类,
+1~126.XXX.XXX.XXX (A类网) :广播地址为XXX.255.255.255
+128~191.XXX.XXX.XXX(B类网):广播地址为XXX.XXX.255.255
+192~254.XXX.XXX.XXX(C类网):广播地址为XXX.XXX.XXX.255
+  比如说三台计算机192.168.0.1、192.168.0.10、192.168.0.18，发送信息时只要指定IP地址为192.168.0.255就可以实现广播了。下面给出一个转换IP为广播IP的函数，快拿去完善自己的OICQ吧^-^.
+
+Function Trun_ip(S:string):string;
+var s1,s2,s3,ss,sss,Head:string;
+n,m:integer;
+begin
+sss:=S;
+n:=pos('.',s);
+s1:=copy(s,1,n);
+m:=length(s1);
+delete(s,1,m);
+Head:=copy(s1,1,(length(s1)-1));
+n:=pos('.',s);
+s2:=copy(s,1,n);
+m:=length(s2);
+delete(s,1,m);
+n:=pos('.',s);
+s3:=copy(s,1,n);
+m:=length(s3);
+delete(s,1,m);
+ss:=sss;
+if strtoint(Head) in [1..126] then ss:=s1+'255.255.255'; //1~126.255.255.255 (A类网)
+if strtoint(Head) in [128..191] then ss:=s1+s2+'255.255';//128~191.XXX.255.255(B类网)
+if strtoint(Head) in [192..254] then ss:=s1+s2+s3+'255'; //192~254.XXX.XXX.255(C类网)
+Result:=ss; 
+end;
+
+-----------------------------------------------------------------------
+五、实际应用之四：利用流实现网络传输屏幕图像
+
+  大家应该见过很多网管程序，这类程序其中有一个功能就是监控远程电脑的屏幕。实际上，这也是利用流操作来实现的。下面我们给出一个例子，这个例子分两个程序，一个服务端，一个是客户端。程序编译后可以直接在单机、局部网或者互联网上使用。程序中已经给出相应注释。后面我们再来作具体分析。
+  新建一个工程，在Internet面版上拖一个ServerSocket控件到窗口，该控件主要用于监听客户端，用来与客户端建立连接和通讯。设置好监听端口后调用方法Open或者Active:=True即开始工作。注意：跟前面的NMUDP不同，当Socket开始监听后就不能再改变它的端口，要改变的话必须先调用Close或设置Active为False，否则将会产生异常。另外，如果该端口已经打开的话，就不能再用这个端口了。所以程序运行尚未退出就不能再运行这个程序，否则也会产生异常，即弹出出错窗口。实际应用中可以通过判断程序是否已经运行，如果已经运行就退出的方法来避免出错。
+  当客户端有数据传入，将触发ServerSocket1ClientRead事件，我们可以在这里对接收的数据进行处理。在本程序中，主要是接收客户端发送过来的字符信息并根据事先的约定来进行相应操作。
+程序全部代码如下：
+
+unit Unit1;{服务端程序}
+interface
+uses
+Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, JPEG,ExtCtrls, ScktComp;
+type
+TForm1 = class(TForm)
+ServerSocket1: TServerSocket;
+procedure ServerSocket1ClientRead(Sender: TObject;Socket: TCustomWinSocket);
+procedure FormCreate(Sender: TObject);
+procedure FormClose(Sender: TObject; var Action: TCloseAction);
+private
+procedure Cjt_GetScreen(var Mybmp: TBitmap; DrawCur: Boolean);
+{自定义抓屏函数,DrawCur表示抓鼠标图像与否}
+{ Private declarations }
+public
+{ Public declarations }
+end;
+var
+Form1: TForm1;
+MyStream: TMemorystream;{内存流对象} 
+implementation
+{$R *.DFM}
+procedure TForm1.Cjt_GetScreen(var Mybmp: TBitmap; DrawCur: Boolean);
+var
+Cursorx, Cursory: integer;
+dc: hdc;
+Mycan: Tcanvas;
+R: TRect;
+DrawPos: TPoint;
+MyCursor: TIcon;
+hld: hwnd;
+Threadld: dword;
+mp: tpoint;
+pIconInfo: TIconInfo;
+begin
+Mybmp := Tbitmap.Create; {建立BMPMAP }
+Mycan := TCanvas.Create; {屏幕截取}
+dc := GetWindowDC(0);
+try
+Mycan.Handle := dc;
+R := Rect(0, 0, screen.Width, screen.Height);
+Mybmp.Width := R.Right;
+Mybmp.Height := R.Bottom;
+Mybmp.Canvas.CopyRect(R, Mycan, R);
+finally
+releaseDC(0, DC);
+end;
+Mycan.Handle := 0;
+Mycan.Free;
+if DrawCur then {画上鼠标图象}
+begin
+GetCursorPos(DrawPos);
+MyCursor := TIcon.Create;
+getcursorpos(mp);
+hld := WindowFromPoint(mp);
+Threadld := GetWindowThreadProcessId(hld, nil);
+AttachThreadInput(GetCurrentThreadId, Threadld, True);
+MyCursor.Handle := Getcursor();
+AttachThreadInput(GetCurrentThreadId, threadld, False);
+GetIconInfo(Mycursor.Handle, pIconInfo);
+cursorx := DrawPos.x - round(pIconInfo.xHotspot);
+cursory := DrawPos.y - round(pIconInfo.yHotspot);
+Mybmp.Canvas.Draw(cursorx, cursory, MyCursor); {画上鼠标}
+Mycursor.ReleaseHandle; {释放数组内存}
+MyCursor.Free; {释放鼠标指针}
+end; 
+end;
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+ServerSocket1.Port := 3000; {端口}
+ServerSocket1.Open; {Socket开始侦听}
+end;
+procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+if ServerSocket1.Active then ServerSocket1.Close; {关闭Socket}
+end;
+procedure TForm1.ServerSocket1ClientRead(Sender: TObject;
+Socket: TCustomWinSocket);
+var
+S, S1: string;
+MyBmp: TBitmap;
+Myjpg: TJpegimage;
+begin
+S := Socket.ReceiveText;
+if S = 'cap' then {客户端发出抓屏幕指令}
+begin
+try
+MyStream := TMemorystream.Create;{建立内存流}
+MyBmp := TBitmap.Create;
+Myjpg := TJpegimage.Create;
+Cjt_GetScreen(MyBmp, True); {True表示抓鼠标图像}
+Myjpg.Assign(MyBmp); {将BMP图象转成JPG格式,便于在互联网上传输}
+Myjpg.CompressionQuality := 10; {JPG文件压缩百分比设置,数字越大图像月清晰,但数据也越大}
+Myjpg.SaveToStream(MyStream); {将JPG图象写入流中}
+Myjpg.free;
+MyStream.Position := 0;{注意:必须添加此句}
+s1 := inttostr(MyStream.size);{流的大小}
+Socket.sendtext(s1); {发送流大小}
+finally
+MyBmp.free;
+end;
+end;
+if s = 'ready' then {客户端已准备好接收图象}
+begin
+MyStream.Position := 0;
+Socket.SendStream(MyStream); {将流发送出去}
+end;
+end;
+end.
+
+  上面是服务端，下面我们来写客户端程序。新建一个工程，添加Socket控件ClientSocket、图像显示控件Image、一个 Panel 、一个Edit、两个 Button和一个状态栏控件StatusBar1。注意：把Edit1和两个 Button放在Panel1上面。ClientSocket的属性跟ServerSocket差不多，不过多了一个Address属性，表示要连接的服务端IP地址。填上IP地址后点“连接”将与服务端程序建立连接，如果成功就可以进行通讯了。点击“抓屏”将发送字符给服务端。因为程序用到了JPEG图像单元，所以要在Uses中添加Jpeg.
+全部代码如下：
+unit Unit2{客户端};
+interface
+uses
+Windows,Messages,SysUtils,Classes,Graphics,Controls,Forms,Dialogs,StdCtrls,ScktComp,ExtCtrls,Jpeg, ComCtrls;
+type
+TForm1 = class(TForm)
+ClientSocket1: TClientSocket;
+Image1: TImage;
+StatusBar1: TStatusBar;
+Panel1: TPanel;
+Edit1: TEdit;
+Button1: TButton;
+Button2: TButton;
+procedure Button1Click(Sender: TObject);
+procedure ClientSocket1Connect(Sender: TObject;
+Socket: TCustomWinSocket);
+procedure Button2Click(Sender: TObject);
+procedure ClientSocket1Error(Sender: TObject; Socket: TCustomWinSocket;
+ErrorEvent: TErrorEvent; var ErrorCode: Integer);
+procedure ClientSocket1Read(Sender: TObject; Socket: TCustomWinSocket);
+procedure FormCreate(Sender: TObject);
+procedure FormClose(Sender: TObject; var Action: TCloseAction);
+procedure ClientSocket1Disconnect(Sender: TObject;
+Socket: TCustomWinSocket);
+private
+{ Private declarations }
+public
+{ Public declarations }
+end;
+var
+Form1: TForm1;
+MySize: Longint;
+MyStream: TMemorystream;{内存流对象}
+implementation
+{$R *.DFM}
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+{-------- 下面为设置窗口控件的外观属性 ------------- }
+{注意:把Button1、Button2和Edit1放在Panel1上面}
+Edit1.Text := '127.0.0.1';
+Button1.Caption := '连接主机';
+Button2.Caption := '抓屏幕';
+Button2.Enabled := false;
+Panel1.Align := alTop;
+Image1.Align := alClient;
+Image1.Stretch := True;
+StatusBar1.Align:=alBottom;
+StatusBar1.SimplePanel := True;
+{----------------------------------------------- }
+MyStream := TMemorystream.Create; {建立内存流对象}
+MySize := 0; {初始化}
+end;
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+if not ClientSocket1.Active then
+begin
+ClientSocket1.Address := Edit1.Text; {远程IP地址}
+ClientSocket1.Port := 3000; {Socket端口}
+ClientSocket1.Open; {建立连接}
+end;
+end;
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+Clientsocket1.Socket.SendText('cap'); {发送指令通知服务端抓取屏幕图象}
+Button2.Enabled := False;
+end;
+procedure TForm1.ClientSocket1Connect(Sender: TObject;
+Socket: TCustomWinSocket);
+begin
+StatusBar1.SimpleText := '与主机' + ClientSocket1.Address + '成功建立连接!';
+Button2.Enabled := True;
+end;
+procedure TForm1.ClientSocket1Error(Sender: TObject;
+Socket: TCustomWinSocket; ErrorEvent: TErrorEvent;
+var ErrorCode: Integer);
+begin
+Errorcode := 0; {不弹出出错窗口}
+StatusBar1.SimpleText := '无法与主机' + ClientSocket1.Address + '建立连接!';
+end;
+procedure TForm1.ClientSocket1Disconnect(Sender: TObject;
+Socket: TCustomWinSocket);
+begin
+StatusBar1.SimpleText := '与主机' + ClientSocket1.Address + '断开连接!';
+Button2.Enabled := False;
+end;
+procedure TForm1.ClientSocket1Read(Sender: TObject;
+Socket: TCustomWinSocket);
+var
+MyBuffer: array[0..10000] of byte; {设置接收缓冲区}
+MyReceviceLength: integer;
+S: string;
+MyBmp: TBitmap;
+MyJpg: TJpegimage;
+begin
+StatusBar1.SimpleText := '正在接收数据......';
+if MySize = 0 then {MySize为服务端发送的字节数，如果为0表示为尚未开始图象接收}
+begin
+S := Socket.ReceiveText;
+MySize := Strtoint(S); {设置需接收的字节数}
+Clientsocket1.Socket.SendText('ready'); {发指令通知服务端开始发送图象}
+end
+else
+begin {以下为图象数据接收部分}
+MyReceviceLength := socket.ReceiveLength; {读出包长度}
+StatusBar1.SimpleText := '正在接收数据,数据大小为:' + inttostr(MySize);
+Socket.ReceiveBuf(MyBuffer, MyReceviceLength); {接收数据包并读入缓冲区内}
+MyStream.Write(MyBuffer, MyReceviceLength); {将数据写入流中}
+if MyStream.Size >= MySize then {如果流长度大于需接收的字节数，则接收完毕}
+begin
+MyStream.Position := 0;
+MyBmp := tbitmap.Create;
+MyJpg := tjpegimage.Create;
+try
+MyJpg.LoadFromStream(MyStream); {将流中的数据读至JPG图像对象中}
+MyBmp.Assign(MyJpg); {将JPG转为BMP}
+StatusBar1.SimpleText := '正在显示图像';
+Image1.Picture.Bitmap.Assign(MyBmp); {分配给image1元件 }
+finally {以下为清除工作 }
+MyBmp.free;
+MyJpg.free;
+Button2.Enabled := true;
+{ Socket.SendText('cap');添加此句即可连续抓屏 }
+MyStream.Clear;
+MySize := 0;
+end;
+end;
+end;
+end;
+procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+MyStream.Free; {释放内存流对象}
+if ClientSocket1.Active then ClientSocket1.Close; {关闭Socket连接}
+end;
+end.
+
+  程序原理：运行服务端开始侦听，再运行客户端，输入服务端IP地址建立连接，然后发一个字符通知服务端抓屏幕。服务端调用自定义函数Cjt_GetScreen抓取屏幕存为BMP，把BMP转换成JPG，把JPG写入内存流中，然后把流发送给客户端。客户端接收到流后做相反操作，将流转换为JPG再转换为BMP然后显示出来。
+  注意：因为Socket的限制，不能一次发送过大的数据，只能分几次发。所以程序中服务端抓屏转换为流后先发送流的大小，通知客户端这个流共有多大，客户端根据这个数字大小来判断是否已经接收完流，如果接收完才转换并显示。
+  这个程序跟前面的自制OICQ都是利用了内存流对象TMemoryStream。其实，这个流对象是程序设计中用得最普遍的，它可以提高I/O的读写能力，而且如果你要同时操作几个不同类型的流，互相交换数据的话，用它作“中间人”是最好不过的了。比如说你把一个流压缩或者解压缩，就先建立一个TMemoryStream对象，然后把别的数据拷贝进去，再执行相应操作就可以了。因为它是直接在内存中工作，所以效率是非常高的。有时侯甚至你感觉不到有任何的延迟。
+  程序有待改进的地方：当然可以加一个压缩单元，发送前先压缩再发送。注意：这里也是有技巧的，就是直接把BMP压缩而不要转换成JPG再压。实验证明：上面程序一幅图像大小大概为40-50KB，如果用LAH压缩算法处理一下便只有8-12KB，这样传输起来就比较快。如果想更快的话，可以采用这样的方法：先抓第一幅图像发送，然后从第二幅开始只发跟前一幅不同区域的图像。外国有一个程序叫Remote Administrator，就是采用这样的方法。他们测试的数据如下：局部网一秒钟100-500幅，互联网上，在网速极低的情况下，一秒钟传输5-10幅。说这些题外话只想说明一个道理：想问题，特别是写程序，特别是看起来很复杂的程序，千万不要钻牛角尖，有时侯不妨换个角度来想。程序是死的，人才是活的。当然，这些只能靠经验的积累。但是一开始就养成好习惯是终身受益的！
+
+★作者:
+
+陈经韬
+
+
+Http:Lovejingtao.126.com 
+E-Mail: Lovejingtao@21.cn.com
+　                   
+　
+ 
+                               &copy;CopyRight 2000 
+
+ 
+iapollo (2002-01-18 4:56:00)  
+接受答案了. 
+ 
+
+jingtao的回答最终被接受。 
